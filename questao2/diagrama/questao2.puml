@@ -1,0 +1,172 @@
+@startuml
+title Questao 2 - Casa de Leiloes Online
+
+interface Observer <<Observer>> {
+    +update(lote: Lote, lance: Lance)
+    +getNome(): String
+}
+
+class Lote <<Subject>> <<Context>> {
+    -nome: String
+    -categoria: String
+    -regra: RegraComissao
+    -precoInicial: double
+    -precoReserva: double
+    -melhor: Lance
+    -lances: List<Lance>
+    -observers: List<Observer>
+    -aberto: boolean
+    +addObserver(o: Observer)
+    +removeObserver(o: Observer)
+    +darLance(autor: Observer, valor: double): boolean
+    +encerrar()
+    +setRegraComissao(regra: RegraComissao)
+    +getRegraComissao(): RegraComissao
+    +isVendido(): boolean
+    +getValorVenda(): double
+    +getComissaoCobrada(): double
+}
+
+class Participante <<Concrete Observer>> {
+    -nome: String
+    +getNome(): String
+    +update(lote: Lote, lance: Lance)
+}
+
+class Painel <<Concrete Observer>> {
+    -maiorPorLote: Map
+    -totalPorLote: Map
+    +update(lote: Lote, lance: Lance)
+}
+
+class Auditor <<Concrete Observer>> {
+    +update(lote: Lote, lance: Lance)
+}
+
+class Lance {
+    +autor: Observer
+    +valor: double
+    +momento: LocalDateTime
+}
+
+interface RegraComissao <<Strategy>> {
+    +calcular(valor: double): double
+    +nome(): String
+}
+
+class ArteComissao <<Concrete Strategy>> {
+    +calcular(valor: double): double
+    +nome(): String
+}
+class VeiculosComissao <<Concrete Strategy>> {
+    +calcular(valor: double): double
+    +nome(): String
+}
+class ImoveisComissao <<Concrete Strategy>> {
+    +calcular(valor: double): double
+    +nome(): String
+}
+class EletronicosComissao <<Concrete Strategy>> {
+    +calcular(valor: double): double
+    +nome(): String
+}
+
+interface ItemFatura <<Prototype>> {
+    +clonar(): ItemFatura
+    +descricao(): String
+    +custo(): double
+}
+
+class Venda <<Concrete Prototype>> {
+    -valor: double
+    +clonar(): ItemFatura
+    +descricao(): String
+    +custo(): double
+}
+
+class SeguroTransporte <<Concrete Prototype>> {
+    -valorVenda: double
+    +clonar(): ItemFatura
+    +descricao(): String
+    +custo(): double
+}
+class Certificado <<Concrete Prototype>> {
+    +clonar(): ItemFatura
+    +descricao(): String
+    +custo(): double
+}
+class Embalagem <<Concrete Prototype>> {
+    +clonar(): ItemFatura
+    +descricao(): String
+    +custo(): double
+}
+class EntregaExpressa <<Concrete Prototype>> {
+    +clonar(): ItemFatura
+    +descricao(): String
+    +custo(): double
+}
+
+class CatalogoServicos <<Prototype Registry>> {
+    -prototipos: Map<String, ItemFatura>
+    +registrar(nome: String, prototipo: ItemFatura)
+    +criar(nome: String): ItemFatura
+}
+
+class Fatura <<Client>> {
+    -lote: Lote
+    -itens: List<ItemFatura>
+    +adicionar(item: ItemFatura)
+    +imprimir()
+}
+
+class Main {
+    +{static} main(args: String[])
+}
+
+Observer <|.. Participante
+Observer <|.. Painel
+Observer <|.. Auditor
+Lote "1" o-- "*" Observer : acompanha
+Lote "1" *-- "*" Lance : registra
+Lote --> RegraComissao : regra vigente
+Lance --> Observer : autor
+
+RegraComissao <|.. ArteComissao
+RegraComissao <|.. VeiculosComissao
+RegraComissao <|.. ImoveisComissao
+RegraComissao <|.. EletronicosComissao
+
+ItemFatura <|.. Venda
+ItemFatura <|.. SeguroTransporte
+ItemFatura <|.. Certificado
+ItemFatura <|.. Embalagem
+ItemFatura <|.. EntregaExpressa
+CatalogoServicos o-- "*" ItemFatura : prototipos
+CatalogoServicos ..> ItemFatura : clonar()
+
+Fatura --> Lote
+Fatura o-- "*" ItemFatura : itens clonados
+Main --> Lote
+Main --> Fatura
+Main --> CatalogoServicos
+
+note bottom of Lote
+  RNF01: o lote so conhece Observer.
+  Nao referencia Participante, Painel
+  nem Auditor. Novo interessado = classe nova.
+end note
+
+note bottom of RegraComissao
+  RNF02: sem if/switch de categoria.
+  A regra troca em tempo de execucao.
+end note
+
+note bottom of CatalogoServicos
+  RNF03 e RNF04: contratar de novo e
+  clonar o prototipo. Nao ha classe de
+  combinacao. A fatura percorre os clones
+  sem verificar o tipo. Novo servico =
+  nova classe registrada no catalogo.
+end note
+
+@enduml

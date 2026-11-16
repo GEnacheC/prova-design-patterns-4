@@ -1,0 +1,4 @@
+public class ArteComissao implements RegraComissao {
+    public double calcular(double valor) { return valor * 0.20; }
+    public String nome() { return "Arte"; }
+}
