@@ -1,0 +1,193 @@
+@startuml
+title Questao 1 - Provisionamento Multinuvem
+
+interface CloudFactory <<Abstract Factory>> {
+    +createVM(id: String): VM
+    +createStorage(id: String, gb: int): Storage
+    +createQueue(id: String): CloudQueue
+    +providerName(): String
+    +nextVmId(): String
+    +nextStorageId(): String
+    +nextQueueId(): String
+    +getVmCostPerHour(): double
+    +getStorageCostPerGB(): double
+    +getQueueCostPerMonth(): double
+}
+
+class AwsFactory <<Concrete Factory>> {
+    -{static} vmSeq: AtomicInteger
+    -{static} stSeq: AtomicInteger
+    -{static} qSeq: AtomicInteger
+    +createVM(id: String): VM
+    +createStorage(id: String, gb: int): Storage
+    +createQueue(id: String): CloudQueue
+    +providerName(): String
+    +nextVmId(): String
+    +nextStorageId(): String
+    +nextQueueId(): String
+    +getVmCostPerHour(): double
+    +getStorageCostPerGB(): double
+    +getQueueCostPerMonth(): double
+}
+
+class AzureFactory <<Concrete Factory>> {
+    -{static} vmSeq: AtomicInteger
+    -{static} stSeq: AtomicInteger
+    -{static} qSeq: AtomicInteger
+    +createVM(id: String): VM
+    +createStorage(id: String, gb: int): Storage
+    +createQueue(id: String): CloudQueue
+    +providerName(): String
+    +nextVmId(): String
+    +nextStorageId(): String
+    +nextQueueId(): String
+    +getVmCostPerHour(): double
+    +getStorageCostPerGB(): double
+    +getQueueCostPerMonth(): double
+}
+
+interface VM <<Abstract Product>> {
+    +id(): String
+    +costPerHour(): double
+    +provider(): String
+}
+
+interface Storage <<Abstract Product>> {
+    +id(): String
+    +costPerGB(): double
+    +gb(): int
+    +provider(): String
+}
+
+interface CloudQueue <<Abstract Product>> {
+    +id(): String
+    +costPerMonth(): double
+    +provider(): String
+}
+
+class AwsVM <<Concrete Product>> {
+    -id: String
+    +id(): String
+    +costPerHour(): double
+    +provider(): String
+}
+class AzureVM <<Concrete Product>> {
+    -id: String
+    +id(): String
+    +costPerHour(): double
+    +provider(): String
+}
+class AwsStorage <<Concrete Product>> {
+    -id: String
+    -gb: int
+    +id(): String
+    +costPerGB(): double
+    +gb(): int
+    +provider(): String
+}
+class AzureStorage <<Concrete Product>> {
+    -id: String
+    -gb: int
+    +id(): String
+    +costPerGB(): double
+    +gb(): int
+    +provider(): String
+}
+class AwsQueue <<Concrete Product>> {
+    -id: String
+    +id(): String
+    +costPerMonth(): double
+    +provider(): String
+}
+class AzureQueue <<Concrete Product>> {
+    -id: String
+    +id(): String
+    +costPerMonth(): double
+    +provider(): String
+}
+
+class Provisionador <<Client>> {
+    +build(name: String, factory: CloudFactory, vmCount: int, gbStorage: int): Environment
+}
+
+class Environment {
+    -name: String
+    -provider: String
+    -region: String
+    -vms: List<VM>
+    -storage: Storage
+    -queue: CloudQueue
+    -estimatedCost: double
+    +printSummary()
+}
+
+class Config <<Singleton>> {
+    -{static} instance: Config
+    -props: Properties
+    -loaded: boolean
+    +{static} getInstance(): Config
+    +load(path: String)
+    +getRegion(): String
+    +getBudget(): double
+}
+
+class Auditoria <<Singleton>> {
+    -{static} instance: Auditoria
+    -registros: List<String>
+    +{static} getInstance(): Auditoria
+    +log(envName: String, provider: String, resultado: String)
+    +printAll()
+}
+
+class Main <<Client>> {
+    +{static} main(args: String[])
+}
+
+CloudFactory <|.. AwsFactory
+CloudFactory <|.. AzureFactory
+VM <|.. AwsVM
+VM <|.. AzureVM
+Storage <|.. AwsStorage
+Storage <|.. AzureStorage
+CloudQueue <|.. AwsQueue
+CloudQueue <|.. AzureQueue
+
+AwsFactory ..> AwsVM : cria
+AwsFactory ..> AwsStorage : cria
+AwsFactory ..> AwsQueue : cria
+AzureFactory ..> AzureVM : cria
+AzureFactory ..> AzureStorage : cria
+AzureFactory ..> AzureQueue : cria
+
+Provisionador --> CloudFactory : usa
+Provisionador --> Config
+Provisionador --> Auditoria
+Provisionador ..> Environment : cria
+Environment *-- "1..*" VM
+Environment *-- "1" Storage
+Environment *-- "1" CloudQueue
+Main --> Provisionador
+Main --> AwsFactory
+Main --> AzureFactory
+Main --> Config
+Main --> Auditoria
+
+note bottom of CloudFactory
+  RNF01-RNF03: a familia de recursos
+  (VM, Storage, CloudQueue) sai de uma
+  unica fabrica. O cliente nao conhece
+  as classes concretas.
+end note
+
+note bottom of Config
+  RNF04: lido uma unica vez.
+  Regiao e orcamento sao os mesmos
+  para todo o programa.
+end note
+
+note bottom of Auditoria
+  RNF05: historico unico.
+  Inclusoes concorrentes nao se perdem.
+end note
+
+@enduml
